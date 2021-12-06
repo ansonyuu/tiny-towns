@@ -3,12 +3,14 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { Perlin } from "three-noise";
 import GUI from "lil-gui";
+import { clampPerlinRegion } from "./utils/clampPerlinRegion";
 
 // Debug
 const gui = new GUI();
 const settings = {
-  near: 2,
-  color: 0xffff00
+  citySize: 500,
+  color: 0xffff00,
+  sampleRate: 0.005
 };
 const extrusionSettings = {
   steps: 1,
@@ -18,11 +20,19 @@ const extrusionSettings = {
   bevelOffset: 5,
   bevelSegments: 0
 };
-const color = gui
+const colorGUI = gui
   .addColor(settings, "color")
   .listen()
   .onChange((x) => {
     plane.material.color.setHex(x);
+    building.material.color.set(x);
+  });
+
+const sampleRateGUI = gui
+  .add(settings, "sampleRate")
+  .listen()
+  .onChange((x) => {
+    tick();
   });
 
 // Canvas
@@ -31,22 +41,27 @@ const canvas = document.querySelector("canvas.webgl");
 // Scene
 export const scene = new THREE.Scene();
 
-const planeGeometry = new THREE.PlaneGeometry(15, 15, 15, 15);
+const planeGeometry = new THREE.PlaneGeometry(
+  settings.citySize,
+  settings.citySize,
+  15,
+  15
+);
 const planeMaterial = new THREE.MeshBasicMaterial({
-  color: settings.color,
+  color: "hsla(203, 7%, 68%, 1)",
   side: THREE.DoubleSide
 });
 const plane = new THREE.Mesh(planeGeometry, planeMaterial);
-plane.material.color.setHex(0xff9a00);
 scene.add(plane);
 
-const perlin = new Perlin(Math.random());
+let perlinPoints = [];
+let buildings = [];
 
-for (let x = 0; x <= 1000; x += 10) {
+for (let x = 0; x <= settings.citySize; x += 10) {
   let x1 = x;
   let x2 = x + 10;
 
-  for (let y = 0; y <= 1000; y += 10) {
+  for (let y = 0; y <= settings.citySize; y += 10) {
     let y1 = y;
     let y2 = y + 10;
     const buildingPoints = [];
@@ -60,34 +75,38 @@ for (let x = 0; x <= 1000; x += 10) {
     buildingPoints.push(new THREE.Vector2(x1, y2));
 
     const buildingShape = new THREE.Shape(buildingPoints);
-    const sampleRate = 0.02;
-    extrusionSettings.depth =
-      ((perlin.get2(new THREE.Vector2(x1 * sampleRate, y1 * sampleRate)) + 1) /
-        2) *
-      100;
+    extrusionSettings.depth = clampPerlinRegion(x1, y1, settings.sampleRate)[0];
 
+    perlinPoints.push(extrusionSettings.depth);
+
+    // creating building mesh
     const buildingGeometry = new THREE.ExtrudeGeometry(
       buildingShape,
       extrusionSettings
     );
-
-    const materialFront = new THREE.MeshBasicMaterial({ color: 0x000000 });
-    const materialSide = new THREE.MeshBasicMaterial({ color: 0xff8800 });
-    const materialArray = [materialFront, materialSide];
-    const buildingMaterial = new THREE.MeshNormalMaterial(materialArray);
-
+    const buildingMaterial = new THREE.MeshStandardMaterial({
+      color: clampPerlinRegion(x1, y1, settings.sampleRate)[1]
+    });
     const building = new THREE.Mesh(buildingGeometry, buildingMaterial);
-    building.position.set(-500, -500, 0);
+    building.position.set(
+      -(settings.citySize / 2),
+      -(settings.citySize / 2),
+      0
+    );
     scene.add(building);
   }
 }
 
+console.log(perlinPoints);
 // Lights
-const pointLight = new THREE.PointLight(0xffffff, 0.1);
-pointLight.position.x = 2;
-pointLight.position.y = 3;
-pointLight.position.z = 4;
-scene.add(pointLight);
+// const pointLight = new THREE.PointLight(0xffffff, 0.6);
+// pointLight.position.x = 6;
+// pointLight.position.y = 6;
+// pointLight.position.z = 6;
+// scene.add(pointLight);
+
+const light = new THREE.AmbientLight(0xffffff); // soft white light
+scene.add(light);
 
 /**
  * Sizes
@@ -116,7 +135,7 @@ window.addEventListener("resize", () => {
  */
 // Base camera
 const camera = new THREE.PerspectiveCamera(
-  135,
+  50,
   sizes.width / sizes.height,
   90,
   10000
