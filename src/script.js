@@ -1,7 +1,6 @@
 import "./style.css";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-import { Perlin } from "three-noise";
 import GUI from "lil-gui";
 import { clampPerlinRegion } from "./utils/clampPerlinRegion";
 import { generateNoiseMap } from "./utils/generateNoiseMap";
@@ -9,10 +8,13 @@ import { generateNoiseMap } from "./utils/generateNoiseMap";
 // Debug
 const gui = new GUI();
 const settings = {
-  cityHeight: 400,
-  cityWidth: 400,
+  cityHeight: 500,
+  cityWidth: 500,
   color: 0xffff00,
-  sampleRate: 0.005
+  sampleRate: 0.002,
+  cameraX: 0,
+  cameraY: 0,
+  cameraZ: 2
 };
 const extrusionSettings = {
   steps: 1,
@@ -35,6 +37,12 @@ const sampleRateGUI = gui
   .listen()
   .onChange((x) => {
     tick();
+  });
+const cameraXGUI = gui
+  .add(settings, "cameraX")
+  .listen()
+  .onChange((x) => {
+    camera.position.z = x;
   });
 
 // Canvas
@@ -112,6 +120,8 @@ for (let x = 0; x <= settings.cityWidth; x += 10) {
   }
 }
 
+const fog = new THREE.Fog(0xffffff, 1, 400, 0);
+scene.add(fog);
 // Lights
 // const pointLight = new THREE.PointLight(0xffffff, 0.6);
 // pointLight.position.x = 6;
@@ -155,8 +165,8 @@ const camera = new THREE.PerspectiveCamera(
   10000
 );
 camera.position.x = 0;
-camera.position.y = 0;
-camera.position.z = 2;
+camera.position.y = 500;
+camera.position.z = 500;
 scene.add(camera);
 
 // Controls
