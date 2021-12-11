@@ -23,7 +23,7 @@ function weightedPerlin(input, weight) {
 export function clampPerlinRegion(x, y, seed, sampleRate) {
   // const perlinValue = new Perlin(seed);
   const buildingDepth = generateNoiseValue(x, y, seed, 250, 4, 0.6, 4);
-  console.log(buildingDepth, "noise map");
+  // console.log(buildingDepth, "noise map");
   // const buildingDepth = perlinValue.get2(
   //   new THREE.Vector2(x * sampleRate, y * sampleRate)
   // );

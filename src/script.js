@@ -3,7 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import GUI from "lil-gui";
 import { clampPerlinRegion } from "./utils/clampPerlinRegion";
-import { generateNoiseMap } from "./utils/generateNoiseMap";
+import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
 
 // Debug
 const gui = new GUI();
@@ -51,6 +51,8 @@ const canvas = document.querySelector("canvas.webgl");
 // Scene
 const scene = new THREE.Scene();
 
+let loader = new GLTFLoader();
+
 const planeGeometry = new THREE.PlaneGeometry(
   settings.cityWidth,
   settings.cityHeight,
@@ -65,20 +67,12 @@ const plane = new THREE.Mesh(planeGeometry, planeMaterial);
 scene.add(plane);
 
 let perlinPoints = [];
-let generatedNoise = generateNoiseMap(
-  settings.cityWidth,
-  settings.cityHeight,
-  10,
-  1,
-  1,
-  1
-);
-console.log(generatedNoise);
-for (let x = 0; x <= settings.cityWidth; x += 10) {
+
+for (let x = 0; x < settings.cityWidth; x += 10) {
   let x1 = x;
   let x2 = x + 10;
 
-  for (let y = 0; y <= settings.cityHeight; y += 10) {
+  for (let y = 0; y < settings.cityHeight; y += 10) {
     let y1 = y;
     let y2 = y + 10;
     const buildingPoints = [];
@@ -120,8 +114,9 @@ for (let x = 0; x <= settings.cityWidth; x += 10) {
   }
 }
 
-const fog = new THREE.Fog(0xffffff, 1, 400, 0);
-scene.add(fog);
+// const fog = new THREE.Fog(0x000000, 1, 300);
+// scene.add(fog);
+
 // Lights
 // const pointLight = new THREE.PointLight(0xffffff, 0.6);
 // pointLight.position.x = 6;
